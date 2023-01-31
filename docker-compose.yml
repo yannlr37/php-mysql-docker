@@ -17,7 +17,7 @@ services:
 
   php:
     build: ./php74
-    working_dir: /var/www/${PROJECT_NAME}
+    working_dir: /var/www/html
     container_name: ${PROJECT_NAME}_php
     volumes:
       - ./code:/var/www/html:rw,delegated
