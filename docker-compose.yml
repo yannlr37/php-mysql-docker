@@ -1,0 +1,64 @@
+version: '3'
+services:
+  web:
+    image: nginx:1.15.1
+    ports:
+      - "80:80"
+      - "443:443"
+    container_name: ${PROJECT_NAME}_nginx
+    volumes:
+      - ./code/:/var/www/html:rw,delegated
+      - ./site.conf:/etc/nginx/conf.d/site.template:ro,cached
+    environment:
+      - PROJECT_NAME=${PROJECT_NAME}
+    command: /bin/bash -c "envsubst '$$PROJECT_NAME' < /etc/nginx/conf.d/site.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    networks:
+      custom_network: {}
+
+  php:
+    build: ./php74
+    working_dir: /var/www/${PROJECT_NAME}
+    container_name: ${PROJECT_NAME}_php
+    volumes:
+      - ./code:/var/www/html:rw,delegated
+    command: /bin/bash -c "exec php-fpm"
+    networks:
+      custom_network: {}
+  
+  db:
+    image: mysql:8.0
+    container_name: ${PROJECT_NAME}_db
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=boilerplate
+      - MYSQL_USER=sheepdev
+      - MYSQL_PASSWORD=sheepdev
+    ports:
+      - "3306:3306"
+    networks:
+      custom_network: {}
+
+  adminer:
+    image: adminer:latest
+    container_name: ${PROJECT_NAME}_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      custom_network: { }
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: ${PROJECT_NAME}_mailhog
+    ports:
+      - "1080:8025"
+      - "2500:1025"
+    networks:
+      custom_network: {}
+
+networks:
+  custom_network:
+    name: ${PROJECT_NAME}
